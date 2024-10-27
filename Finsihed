@@ -1,0 +1,77 @@
+-- Configuration
+local outlineColor = Color3.fromRGB(255, 0, 0) -- Red color for the outline
+local outlineTransparency = 0 -- 0 is fully visible, 1 is fully transparent
+local fillTransparency = 1 -- 1 means no fill, so only the outline is visible
+local teleportHeight = 10000 -- Height to teleport to
+
+-- Display notification on execution
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Notification";
+    Text = "Executed";
+    Duration = 3;
+})
+
+-- Function to create an outline for a player's character
+local function createOutlineForPlayer(player)
+    local function addOutline()
+        if player.Character then
+            -- Create a Highlight object for outlining
+            local highlight = Instance.new("Highlight")
+            highlight.Adornee = player.Character
+            highlight.Parent = player.Character
+            highlight.FillTransparency = fillTransparency
+            highlight.OutlineTransparency = outlineTransparency
+            highlight.OutlineColor = outlineColor
+
+            -- Remove highlight if player leaves or character changes
+            player.CharacterRemoving:Connect(function()
+                highlight:Destroy()
+            end)
+        end
+    end
+
+    -- Apply the outline if the character is already loaded
+    if player.Character then
+        addOutline()
+    end
+
+    -- Also add an outline whenever the player's character spawns
+    player.CharacterAdded:Connect(addOutline)
+end
+
+-- Outline all existing players
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player ~= game.Players.LocalPlayer then
+        createOutlineForPlayer(player)
+    end
+end
+
+-- Listen for new players joining the game
+game.Players.PlayerAdded:Connect(function(player)
+    if player ~= game.Players.LocalPlayer then
+        createOutlineForPlayer(player)
+    end
+end)
+
+-- Function to teleport the player high into the sky
+local function teleportHigh()
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame + Vector3.new(0, teleportHeight, 0)
+    end
+end
+
+-- Function to rejoin the game
+local function rejoinGame()
+    game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+end
+
+-- Key press detection for "H" to trigger rejoin and "G" to teleport high
+local userInputService = game:GetService("UserInputService")
+userInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.H then
+        rejoinGame()
+    elseif input.KeyCode == Enum.KeyCode.G then
+        teleportHigh()
+    end
+end)
